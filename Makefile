@@ -47,7 +47,7 @@ upgrade-npm-deps:
 
 .PHONY: ui-bump-version
 ui-bump-version:
-	version=$$(./scripts/get_module_version.sh) && ./scripts/ui_release.sh --bump-version "$${version}"
+	version=$(./scripts/get_module_version.sh) && ./scripts/ui_release.sh --bump-version "${version}"
 	cd web/ui && npm install
 	git add "./web/ui/package-lock.json" "./**/package.json"
 
@@ -160,7 +160,10 @@ plugins/plugins.go: plugins.yml plugins/generate.go
 plugins: plugins/plugins.go
 
 .PHONY: build
-build: assets npm_licenses assets-compress plugins common-build
+build: assets npm_licenses assets-compress plugins
+	@echo ">> building with optimization flags"
+	$(GO) build -trimpath -gcflags="-l=4" -ldflags="-s -w" -o $(PREFIX)prometheus ./cmd/prometheus
+	$(GO) build -trimpath -gcflags="-l=4" -ldflags="-s -w" -o $(PREFIX)promtool ./cmd/promtool
 
 .PHONY: bench_tsdb
 bench_tsdb: $(PROMU)
@@ -188,7 +191,7 @@ check-go-mod-version:
 update-all-go-deps:
 	@$(MAKE) update-go-deps
 	@echo ">> updating Go dependencies in ./documentation/examples/remote_storage/"
-	@cd ./documentation/examples/remote_storage/ && for m in $$($(GO) list -mod=readonly -m -f '{{ if and (not .Indirect) (not .Main)}}{{.Path}}{{end}}' all); do \
-		$(GO) get -d $$m; \
+	@cd ./documentation/examples/remote_storage/ && for m in $($(GO) list -mod=readonly -m -f '{{ if and (not .Indirect) (not .Main)}}{{.Path}}{{end}}' all); do \
+		$(GO) get -d $m; \
 	done
 	@cd ./documentation/examples/remote_storage/ && $(GO) mod tidy
